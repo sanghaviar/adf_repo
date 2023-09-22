@@ -1,0 +1,435 @@
+{
+    "name": "adf_end_to_end_pipeline",
+    "properties": {
+        "activities": [
+            {
+                "name": "Copy data_source_to_bronze",
+                "type": "Copy",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "storeSettings": {
+                            "type": "AzureBlobFSReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "sink": {
+                        "type": "DelimitedTextSink",
+                        "storeSettings": {
+                            "type": "AzureBlobFSWriteSettings"
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextWriteSettings",
+                            "quoteAllText": true,
+                            "fileExtension": ".txt"
+                        }
+                    },
+                    "enableStaging": false,
+                    "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                            "allowDataTruncation": true,
+                            "treatBooleanAsNumber": false
+                        }
+                    }
+                },
+                "inputs": [
+                    {
+                        "referenceName": "ds_bronzeToSilver_dev_001",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "containerName": {
+                                "value": "@pipeline().parameters.sourcecontainername",
+                                "type": "Expression"
+                            },
+                            "directoryName": {
+                                "value": "@pipeline().parameters.sourcedirectoryname",
+                                "type": "Expression"
+                            },
+                            "fileName": {
+                                "value": "@pipeline().parameters.sourcefilename",
+                                "type": "Expression"
+                            },
+                            "columndelimiter": {
+                                "value": "@pipeline().parameters.columndelimiter",
+                                "type": "Expression"
+                            },
+                            "encoding": {
+                                "value": "@pipeline().parameters.encoding",
+                                "type": "Expression"
+                            },
+                            "escapecharacter": {
+                                "value": "@pipeline().parameters.escapecharacter",
+                                "type": "Expression"
+                            },
+                            "quotecharacter": {
+                                "value": "@pipeline().parameters.quotecharacter",
+                                "type": "Expression"
+                            },
+                            "firstrowasheader": {
+                                "value": "@pipeline().parameters.firstrowasheader",
+                                "type": "Expression"
+                            },
+                            "nullvalue": {
+                                "value": "@pipeline().parameters.nullvalue",
+                                "type": "Expression"
+                            }
+                        }
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "ds_bronzeToSilver_dev_001",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "containerName": {
+                                "value": "@pipeline().parameters.sinkcontainername",
+                                "type": "Expression"
+                            },
+                            "directoryName": {
+                                "value": "@concat(pipeline().parameters.sinkdirectoryname,'/',pipeline().parameters.scheduled_date,'/')",
+                                "type": "Expression"
+                            },
+                            "fileName": {
+                                "value": "@pipeline().parameters.sourcefilename",
+                                "type": "Expression"
+                            },
+                            "columndelimiter": {
+                                "value": "@pipeline().parameters.columndelimiter",
+                                "type": "Expression"
+                            },
+                            "encoding": {
+                                "value": "@pipeline().parameters.encoding",
+                                "type": "Expression"
+                            },
+                            "escapecharacter": {
+                                "value": "@pipeline().parameters.escapecharacter",
+                                "type": "Expression"
+                            },
+                            "quotecharacter": {
+                                "value": "@pipeline().parameters.quotecharacter",
+                                "type": "Expression"
+                            },
+                            "firstrowasheader": {
+                                "value": "@pipeline().parameters.firstrowasheader",
+                                "type": "Expression"
+                            },
+                            "nullvalue": {
+                                "value": "@pipeline().parameters.nullvalue",
+                                "type": "Expression"
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Notebook1",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Copy data_source_to_bronze",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Users/sanghavi.a.r@diggibyte.com/Driver"
+                },
+                "linkedServiceName": {
+                    "referenceName": "ls_databricks_dev_001",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Moving to Archive",
+                "type": "Copy",
+                "dependsOn": [
+                    {
+                        "activity": "Notebook1",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "storeSettings": {
+                            "type": "AzureBlobFSReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "sink": {
+                        "type": "DelimitedTextSink",
+                        "storeSettings": {
+                            "type": "AzureBlobFSWriteSettings"
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextWriteSettings",
+                            "quoteAllText": true,
+                            "fileExtension": ".txt"
+                        }
+                    },
+                    "enableStaging": false,
+                    "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                            "allowDataTruncation": true,
+                            "treatBooleanAsNumber": false
+                        }
+                    }
+                },
+                "inputs": [
+                    {
+                        "referenceName": "ds_bronzeToSilver_dev_001",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "containerName": {
+                                "value": "@pipeline().parameters.sourcecontainername",
+                                "type": "Expression"
+                            },
+                            "directoryName": {
+                                "value": "@pipeline().parameters.sourcedirectoryname",
+                                "type": "Expression"
+                            },
+                            "fileName": {
+                                "value": "@pipeline().parameters.sourcefilename",
+                                "type": "Expression"
+                            },
+                            "columndelimiter": {
+                                "value": "@pipeline().parameters.columndelimiter",
+                                "type": "Expression"
+                            },
+                            "encoding": {
+                                "value": "@pipeline().parameters.encoding",
+                                "type": "Expression"
+                            },
+                            "escapecharacter": {
+                                "value": "@pipeline().parameters.escapecharacter",
+                                "type": "Expression"
+                            },
+                            "quotecharacter": {
+                                "value": "@pipeline().parameters.quotecharacter",
+                                "type": "Expression"
+                            },
+                            "firstrowasheader": {
+                                "value": "@pipeline().parameters.firstrowasheader",
+                                "type": "Expression"
+                            },
+                            "nullvalue": {
+                                "value": "@pipeline().parameters.nullvalue",
+                                "type": "Expression"
+                            }
+                        }
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "ds_bronzeToSilver_dev_001",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "containerName": {
+                                "value": "@pipeline().parameters.sourcecontainername",
+                                "type": "Expression"
+                            },
+                            "directoryName": {
+                                "value": "@concat(pipeline().parameters.archive_container,'/',pipeline().parameters.sinkdirectoryname,'/',pipeline().parameters.scheduled_date)",
+                                "type": "Expression"
+                            },
+                            "fileName": {
+                                "value": "@pipeline().parameters.sinkfilename",
+                                "type": "Expression"
+                            },
+                            "columndelimiter": {
+                                "value": "@pipeline().parameters.columndelimiter",
+                                "type": "Expression"
+                            },
+                            "encoding": {
+                                "value": "@pipeline().parameters.encoding",
+                                "type": "Expression"
+                            },
+                            "escapecharacter": {
+                                "value": "@pipeline().parameters.escapecharacter",
+                                "type": "Expression"
+                            },
+                            "quotecharacter": {
+                                "value": "@pipeline().parameters.quotecharacter",
+                                "type": "Expression"
+                            },
+                            "firstrowasheader": {
+                                "value": "@pipeline().parameters.firstrowasheader",
+                                "type": "Expression"
+                            },
+                            "nullvalue": {
+                                "value": "@pipeline().parameters.nullvalue",
+                                "type": "Expression"
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "Delete from working",
+                "type": "Delete",
+                "dependsOn": [
+                    {
+                        "activity": "Moving to Archive",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "dataset": {
+                        "referenceName": "ds_bronzeToSilver_dev_001",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "containerName": {
+                                "value": "@pipeline().parameters.sourcecontainername",
+                                "type": "Expression"
+                            },
+                            "directoryName": {
+                                "value": "@pipeline().parameters.sourcedirectoryname",
+                                "type": "Expression"
+                            },
+                            "fileName": {
+                                "value": "@pipeline().parameters.sourcefilename",
+                                "type": "Expression"
+                            },
+                            "columndelimiter": {
+                                "value": "@pipeline().parameters.columndelimiter",
+                                "type": "Expression"
+                            },
+                            "encoding": {
+                                "value": "@pipeline().parameters.encoding",
+                                "type": "Expression"
+                            },
+                            "escapecharacter": {
+                                "value": "@pipeline().parameters.escapecharacter",
+                                "type": "Expression"
+                            },
+                            "quotecharacter": {
+                                "value": "@pipeline().parameters.quotecharacter",
+                                "type": "Expression"
+                            },
+                            "firstrowasheader": {
+                                "value": "@pipeline().parameters.firstrowasheader",
+                                "type": "Expression"
+                            },
+                            "nullvalue": {
+                                "value": "@pipeline().parameters.nullvalue",
+                                "type": "Expression"
+                            }
+                        }
+                    },
+                    "enableLogging": false,
+                    "storeSettings": {
+                        "type": "AzureBlobFSReadSettings",
+                        "recursive": true,
+                        "enablePartitionDiscovery": false
+                    }
+                }
+            }
+        ],
+        "parameters": {
+            "sourcecontainername": {
+                "type": "string",
+                "defaultValue": "sftp"
+            },
+            "sourcedirectoryname": {
+                "type": "string",
+                "defaultValue": "uploads/Header/working/"
+            },
+            "sourcefilename": {
+                "type": "string",
+                "defaultValue": "Header_1.csv"
+            },
+            "sinkcontainername": {
+                "type": "string",
+                "defaultValue": "bronze"
+            },
+            "sinkdirectoryname": {
+                "type": "string",
+                "defaultValue": "Header"
+            },
+            "sinkfilename": {
+                "type": "string"
+            },
+            "columndelimiter": {
+                "type": "string",
+                "defaultValue": ","
+            },
+            "encoding": {
+                "type": "string"
+            },
+            "escapecharacter": {
+                "type": "string"
+            },
+            "quotecharacter": {
+                "type": "string"
+            },
+            "firstrowasheader": {
+                "type": "bool",
+                "defaultValue": true
+            },
+            "nullvalue": {
+                "type": "string"
+            },
+            "scheduled_date": {
+                "type": "string",
+                "defaultValue": "08-09-2023"
+            },
+            "archive_container": {
+                "type": "string",
+                "defaultValue": "Archive"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2023-09-14T12:14:49Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
